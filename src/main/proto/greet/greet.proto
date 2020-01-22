@@ -14,20 +14,39 @@ message GreetRequest {
 }
 
 message GreetResponse {
- string result = 1;
+   string result = 1;
 }
-// Stream Messages
+// server Stream Messages
 message GreetManyTimeRequest {
    Greeting greeting = 1;
 }
 
 message GreetManyTimeResponse {
-  string result = 1;
+   string result = 1;
+}
+// client stream message
+message LongGreetRequest {
+  Greeting greeting = 1;
+}
+
+message LongGreetResponse {
+   string result = 1;
+}
+// Bi-directional streaming
+message GreetEveryOneRequest {
+     Greeting greeting = 1;
+}
+message GreetEveryOneResponse {
+   string result = 1;
 }
 
 service GreetService {
       // Unary
       rpc Greet(GreetRequest) returns (GreetResponse) {};
-      // stream
+      // server streaming
       rpc GreetMany(GreetManyTimeRequest) returns (stream GreetManyTimeResponse) {};
+      // client streaming
+      rpc LongGreet(stream LongGreetRequest) returns (LongGreetResponse) {};
+      // Bi-directional streaming
+      rpc GreetEveryOne(stream GreetEveryOneRequest) returns (stream GreetEveryOneResponse) {};
 }
