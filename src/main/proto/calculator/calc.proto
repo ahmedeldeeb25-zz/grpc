@@ -13,6 +13,16 @@ message SumResponse {
    int32 sum_result = 1;
 }
 
+message squareRootRequest {
+   int32 value = 1;
+}
+message squareRootResponse {
+   double result = 1;
+}
+
 service calculatorService {
   rpc Sum(SumRequest) returns (SumResponse) {};
+
+  // handling exception
+  rpc squareRoot(squareRootRequest) returns (squareRootResponse) {};
 }
