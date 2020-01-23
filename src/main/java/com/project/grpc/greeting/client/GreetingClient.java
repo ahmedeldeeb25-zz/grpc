@@ -2,10 +2,13 @@ package com.project.grpc.greeting.client;
 
 import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.*;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
+import javax.net.ssl.SSLException;
+import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,16 +27,26 @@ public class GreetingClient {
             e.printStackTrace();
         }
     }
-    public void run() {
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("localhost", 50051)
-                .usePlaintext()
+
+    public void run() throws SSLException {
+
+//        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+//                .usePlaintext()
+//                .build();
+
+
+       //  With server authentication SSL/TLS; custom CA root certificates; not on Android
+        ManagedChannel channel = NettyChannelBuilder.forAddress("localhost", 50051)
+                .sslContext(GrpcSslContexts.forClient().trustManager(new File("ssl/ca.crt")).build())
                 .build();
+
 
         //    doUnaryCall(channel);
         //    doServerStreamingCall(channel);
         //    doClientStreamingCall(channel);
-        doBiDirectionalStreamingCall(channel);
+        // doBiDirectionalStreamingCall(channel);
+      //  doGreetingWithDeadline(channel);
+        doUnaryCall(channel);
 
         channel.shutdown();
     }
@@ -157,6 +170,34 @@ public class GreetingClient {
             latch.await(3L, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+
+    }
+
+    private void doGreetingWithDeadline(ManagedChannel channel) {
+        // Add greeting to GreetRequest - Unary
+        GreetServiceGrpc.GreetServiceBlockingStub stub = GreetServiceGrpc.newBlockingStub(channel);
+        // create protocol buffer for greeting message
+        try {
+            System.out.println("Sending request with a service with Deadline of 500ms");
+            Greeting greeting = Greeting.newBuilder()
+                    .setFirstName("Ahmed")
+                    .setLastName("Eldeeb")
+                    .getDefaultInstanceForType();
+            GreetRequest greetRequest = GreetRequest.newBuilder()
+                    .setGreeting(greeting)
+                    .build();
+
+            // Call gRPC and get back the response
+            GreetResponse greetResponse = stub.withDeadline(Deadline.after(500, TimeUnit.MILLISECONDS)).greetDeadLine(greetRequest);
+
+            System.out.println(greetResponse.getResult());
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus() == Status.DEADLINE_EXCEEDED) {
+                System.out.println("DeadLine has been exceed, we can't send a request");
+            } else {
+                e.printStackTrace();
+            }
         }
 
     }
